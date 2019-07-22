@@ -105,8 +105,8 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
 
     dataset = SequencePairDataset(lang=encoder_decoder.lang,
                                   use_cuda=use_cuda,
-                                  is_val=not use_train_dataset,
-                                  val_size=val_size)
+                                  val_size=val_size,
+                                  data_type='test')
 
     data_loader = DataLoader(dataset, batch_size=batch_size)
     if interact:

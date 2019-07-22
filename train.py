@@ -132,15 +132,15 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
         print("creating training and validation datasets with saved languages", flush=True)
         train_dataset = SequencePairDataset(lang=encoder_decoder.lang,
                                             use_cuda=use_cuda,
-                                            is_val=False,
                                             val_size=val_size,
-                                            use_extended_vocab=(encoder_decoder.decoder_type=='copy'))
+                                            use_extended_vocab=(encoder_decoder.decoder_type=='copy'),
+                                            data_type='train')
 
         val_dataset = SequencePairDataset(lang=encoder_decoder.lang,
                                           use_cuda=use_cuda,
-                                          is_val=True,
                                           val_size=val_size,
-                                          use_extended_vocab=(encoder_decoder.decoder_type=='copy'))
+                                          use_extended_vocab=(encoder_decoder.decoder_type=='copy'),
+                                          data_type='dev')
 
     else:
         os.mkdir(model_path)
@@ -148,17 +148,17 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
         print("creating training and validation datasets", flush=True)
         train_dataset = SequencePairDataset(vocab_limit=vocab_limit,
                                             use_cuda=use_cuda,
-                                            is_val=False,
                                             val_size=val_size,
                                             seed=seed,
-                                            use_extended_vocab=(decoder_type=='copy'))
+                                            use_extended_vocab=(decoder_type=='copy'),
+                                            data_type='train')
 
         val_dataset = SequencePairDataset(lang=train_dataset.lang,
                                           use_cuda=use_cuda,
-                                          is_val=True,
                                           val_size=val_size,
                                           seed=seed,
-                                          use_extended_vocab=(decoder_type=='copy'))
+                                          use_extended_vocab=(decoder_type=='copy'),
+                                          data_type='dev')
 
         print("creating encoder-decoder model", flush=True)
         encoder_decoder = EncoderDecoder(train_dataset.lang,

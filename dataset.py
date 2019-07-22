@@ -6,14 +6,16 @@ from operator import itemgetter
 
 
 class Language(object):
-    def __init__(self, vocab_limit, data_path, parser, files=None):
+    def __init__(self, vocab_limit, data_path, parser):
         self.data_path = data_path
         self.parser = parser
 
+        '''
         if files:
             self.files = files
         else:
             self.files = os.listdir(self.data_path)
+        '''
 
         self.vocab = self.create_vocab()
 
@@ -34,10 +36,13 @@ class Language(object):
             self.parser = English()
 
         vocab = dict()
+        '''
         with open('cleaned_first_names.txt', 'r') as f:
             lines = f.readlines()
             names = [line.lower().split()[0] for line in lines]  # unambiguous name tokens
+        '''
 
+        '''
         for file_idx, file in enumerate(self.files):
             if file_idx % 1000 == 0:
                 print("reading file %i/%i" % (file_idx, len(self.files)), flush=True)
@@ -50,6 +55,16 @@ class Language(object):
                     # do not add name tokens to vocab
                     if token not in names and not contains_digit(token) and '@' not in token and 'http' not in token and 'www' not in token:
                         vocab[token] = vocab.get(token, 0) + 1
+        '''
+        with open(self.data_pat + "copynet_train.txt", "r") as f:
+            lines = f.readlines()
+            assert len(lines) == 2
+            tokens = list(lines)[0].split() + list(lines)[1].split()
+            for token in tokens:
+                # do not add name tokens to vocab
+                if not contains_digit(token) and '@' not in token and 'http' not in token and 'www' not in token:
+                    vocab[token] = vocab.get(token, 0) + 1
+
         return vocab
 
 
@@ -61,9 +76,9 @@ class SequencePairDataset(Dataset):
                  vocab_limit=None,
                  val_size=0.1,
                  seed=42,
-                 is_val=False,
                  use_cuda=False,
-                 use_extended_vocab=True):
+                 use_extended_vocab=True,
+                 data_type='test'):
 
         self.data_path = data_path
         self.maxlen = maxlen
@@ -71,9 +86,9 @@ class SequencePairDataset(Dataset):
         self.parser = None
         self.val_size = val_size
         self.seed = seed
-        self.is_val = is_val
         self.use_extended_vocab = use_extended_vocab
 
+        '''
         if os.path.isdir(self.data_path):
             self.files = [f for f in os.listdir(self.data_path) if not f.startswith('.')]
             idxs = list(range(len(self.files)))
@@ -89,14 +104,27 @@ class SequencePairDataset(Dataset):
             self.files = [self.files[idx] for idx in idxs]
         else:
             self.files = []
+        '''
 
         if lang is None:
-            lang = Language(vocab_limit, self.data_path, files=self.files, parser=self.parser)
+            lang = Language(vocab_limit, self.data_path, parser=self.parser)
 
         self.lang = lang
+        self.pairs = []
+
+        with open(self.data_path + "copynet_" + data_type + ".txt", "r", encoding='utf-8') as pair_file:
+            for line in pair_file:
+                nl = line.split('\t')[0]
+                sql = line.split('\t')[1]
+                input_token_list = sql.split()
+                output_token_list = nl.split()
+                self.pairs.append((input_token_list, output_token_list))
+        random.seed(self.seed)
+        random.shuffle(self.pairs)
 
     def __len__(self):
-        return len(self.files)
+        return len(self.pairs)
+        #return len(self.files)
 
     def __getitem__(self, idx):
         """
@@ -108,9 +136,13 @@ class SequencePairDataset(Dataset):
         output_token_list: list[int]
         token_mapping: binary array"""
 
+        '''
         with open(self.data_path + self.files[idx], "r", encoding='utf-8') as pair_file:
             input_token_list = pair_file.readline().split()
             output_token_list = pair_file.readline().split()
+        '''
+        input_token_list = self.pairs[idx][0]
+        output_token_list = self.pairs[idx][1]
 
         input_token_list = (['<SOS>'] + input_token_list + ['<EOS>'])[:self.maxlen]
         output_token_list = (['<SOS>'] + output_token_list + ['<EOS>'])[:self.maxlen]

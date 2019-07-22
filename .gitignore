@@ -1,0 +1,5 @@
+__pycache__
+data/
+logs/
+model/__pycache__
+copynet_env/
