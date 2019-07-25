@@ -39,8 +39,15 @@ def evaluate(encoder_decoder: EncoderDecoder, data_loader):
 
     mean_loss = len(losses) / sum(losses)
 
-    bleu_score = corpus_bleu(all_target_seqs, all_output_seqs, smoothing_function=SmoothingFunction().method1)
+    """
+    for i in range(20):
+        print(all_target_seqs[i])
+        print(all_output_seqs[i])
+        print('*'*80)
+    """
 
+    bleu_score = corpus_bleu(all_target_seqs, all_output_seqs, smoothing_function=SmoothingFunction().method2)
+    print('BLEU SCORE: ' + str(bleu_score))
     return mean_loss, bleu_score
 
 
@@ -91,10 +98,12 @@ def print_output(input_seq, encoder_decoder: EncoderDecoder, input_tokens=None, 
 
 
 def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size, batch_size, interact, unsmear):
-    model_path = './model/' + model_name + '/'
+    #model_path = './model/' + model_name + '/'
+    model_path = model_name
 
     if use_cuda:
-        encoder_decoder = torch.load(model_path + model_name + '.pt')
+        #encoder_decoder = torch.load(model_path + model_name + '.pt')
+        encoder_decoder = torch.load(model_path)
     else:
         encoder_decoder = torch.load(model_path + model_name + '.pt', map_location=lambda storage, loc: storage)
 
@@ -102,6 +111,7 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
         encoder_decoder = encoder_decoder.cuda()
     else:
         encoder_decoder = encoder_decoder.cpu()
+
 
     dataset = SequencePairDataset(lang=encoder_decoder.lang,
                                   use_cuda=use_cuda,
@@ -186,7 +196,7 @@ if __name__ == '__main__':
 
     try:
         main(args.model_name,
-             args.use_cuda,
+             True,
              args.n_print,
              args.idxs_print,
              args.use_train_dataset,

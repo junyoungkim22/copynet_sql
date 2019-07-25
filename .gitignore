@@ -3,3 +3,5 @@ data/
 logs/
 model/__pycache__
 copynet_env/
+model/first_model
+model/test

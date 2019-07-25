@@ -38,7 +38,12 @@ def train(encoder_decoder: EncoderDecoder,
         for batch_idx, (input_idxs, target_idxs, input_tokens, target_tokens) in enumerate(tqdm(train_data_loader)):
             # input_idxs and target_idxs have dim (batch_size x max_len)
             # they are NOT sorted by length
-
+            '''
+            print(input_idxs[0])
+            print(input_tokens[0])
+            print(target_idxs[0])
+            print(target_tokens[0])
+            '''
             lengths = (input_idxs != 0).long().sum(dim=1)
             sorted_lengths, order = torch.sort(lengths, descending=True)
 
@@ -51,21 +56,21 @@ def train(encoder_decoder: EncoderDecoder,
                                                             targets=target_variable,
                                                             keep_prob=keep_prob,
                                                             teacher_forcing=teacher_forcing)
-
             batch_size = input_variable.shape[0]
 
             flattened_outputs = output_log_probs.view(batch_size * max_length, -1)
 
             batch_loss = loss_function(flattened_outputs, target_variable.contiguous().view(-1))
+
             batch_loss.backward()
             optimizer.step()
-
             batch_outputs = trim_seqs(output_seqs)
 
             batch_targets = [[list(seq[seq > 0])] for seq in list(to_np(target_variable))]
 
-            batch_bleu_score = corpus_bleu(batch_targets, batch_outputs, smoothing_function=SmoothingFunction().method1)
+            batch_bleu_score = corpus_bleu(batch_targets, batch_outputs, smoothing_function=SmoothingFunction().method2)
 
+            '''
             if global_step < 10 or (global_step % 10 == 0 and global_step < 100) or (global_step % 100 == 0 and epoch < 2):
                 input_string = "Amy, Please schedule a meeting with Marcos on Tuesday April 3rd. Adam Kleczewski"
                 output_string = encoder_decoder.get_response(input_string)
@@ -74,6 +79,7 @@ def train(encoder_decoder: EncoderDecoder,
                 input_string = "Amy, Please cancel this meeting. Adam Kleczewski"
                 output_string = encoder_decoder.get_response(input_string)
                 writer.add_text('cancel', output_string, global_step=global_step)
+            '''
 
             if global_step % 100 == 0:
 
@@ -86,6 +92,11 @@ def train(encoder_decoder: EncoderDecoder,
                     writer.add_histogram('grads/' + tag, to_np(value.grad), global_step, bins='doane')
 
             global_step += 1
+
+            '''
+            if batch_idx == 30:
+                break
+            '''
 
         val_loss, val_bleu_score = evaluate(encoder_decoder, val_data_loader)
 
@@ -100,6 +111,7 @@ def train(encoder_decoder: EncoderDecoder,
         decoder_vocab = encoder_decoder.lang.tok_to_idx.keys()
         writer.add_embedding(decoder_embeddings, metadata=decoder_vocab, global_step=0, tag='decoder_embeddings')
 
+        '''
         input_string = "Amy, Please schedule a meeting with Marcos on Tuesday April 3rd. Adam Kleczewski"
         output_string = encoder_decoder.get_response(input_string)
         writer.add_text('schedule', output_string, global_step=global_step)
@@ -107,9 +119,10 @@ def train(encoder_decoder: EncoderDecoder,
         input_string = "Amy, Please cancel this meeting. Adam Kleczewski"
         output_string = encoder_decoder.get_response(input_string)
         writer.add_text('cancel', output_string, global_step=global_step)
+        '''
 
         print('val loss: %.5f, val BLEU score: %.5f' % (val_loss, val_bleu_score), flush=True)
-        torch.save(encoder_decoder, "%s%s_%i.pt" % (model_path, model_name, epoch))
+        torch.save(encoder_decoder, "%s%s_%i_%.3f.pt" % (model_path, model_name, epoch, val_bleu_score))
 
         print('-' * 100, flush=True)
 
@@ -199,7 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_cuda', action='store_true',
                         help='flag indicating that cuda will be used')
 
-    parser.add_argument('--batch_size', type=int, default=100,
+    parser.add_argument('--batch_size', type=int, default=32,
                         help='number of examples in a batch')
 
     parser.add_argument('--teacher_forcing_fraction', type=float, default=0.5,
@@ -244,5 +257,5 @@ if __name__ == '__main__':
     else:
         schedule = np.ones(args.epochs) * args.teacher_forcing_fraction
 
-    main(args.model_name, args.use_cuda, args.batch_size, schedule, args.keep_prob, args.val_size, args.lr, args.decoder_type, args.vocab_limit, args.hidden_size, args.embedding_size, args.max_length)
+    main(args.model_name, True, args.batch_size, schedule, args.keep_prob, args.val_size, args.lr, args.decoder_type, args.vocab_limit, args.hidden_size, args.embedding_size, args.max_length)
     # main(str(int(time.time())), args.use_cuda, args.batch_size, schedule, args.keep_prob, args.val_size, args.lr, args.decoder_type, args.vocab_limit, args.hidden_size, args.embedding_size, args.max_length)

@@ -104,6 +104,7 @@ class CopyNetDecoder(DecoderBase):
 
         # Copy mechanism
         transformed_hidden2 = self.copy_W(output).view(batch_size, self.hidden_size, 1)
+        transformed_hidden2 = torch.tanh(transformed_hidden2)
         copy_score_seq = torch.bmm(encoder_outputs, transformed_hidden2)  # this is linear. add activation function before multiplying.
         copy_scores = torch.bmm(torch.transpose(copy_score_seq, 1, 2), one_hot_input_seq).squeeze(1)  # [b, vocab_size + seq_length]
         missing_token_mask = (one_hot_input_seq.sum(dim=1) == 0)  # tokens not present in the input sequence

@@ -3,6 +3,7 @@ import torch
 from torch.autograd import Variable
 from abc import ABC
 from torch import nn
+from torch import Tensor
 
 
 class DecoderBase(ABC, nn.Module):
@@ -18,6 +19,8 @@ def seq_to_string(seq, idx_to_tok, input_tokens=None):
     vocab_size = len(idx_to_tok)
     seq_length = (seq != 0).sum()
     words = []
+    if(isinstance(seq, Tensor)):
+        seq = seq.tolist()
     for idx in seq[:seq_length]:
         if idx < vocab_size:
             words.append(idx_to_tok[idx])

@@ -17,9 +17,12 @@ class Language(object):
             self.files = os.listdir(self.data_path)
         '''
 
-        self.vocab = self.create_vocab()
+        vocab = self.create_vocab()
 
-        truncated_vocab = sorted(self.vocab.items(), key=itemgetter(1), reverse=True)[:vocab_limit]
+        #truncated_vocab = sorted(self.vocab.items(), key=itemgetter(1), reverse=True)[:vocab_limit]
+        truncated_vocab = sorted(vocab.items(), key=itemgetter(1), reverse=True)[:]
+
+        del vocab
 
         self.tok_to_idx = dict()
         self.tok_to_idx['<MSK>'] = 0
@@ -34,8 +37,8 @@ class Language(object):
         if self.parser is None:
             from spacy.lang.en import English
             self.parser = English()
-
         vocab = dict()
+        word2count = dict()
         '''
         with open('cleaned_first_names.txt', 'r') as f:
             lines = f.readlines()
@@ -55,18 +58,52 @@ class Language(object):
                     # do not add name tokens to vocab
                     if token not in names and not contains_digit(token) and '@' not in token and 'http' not in token and 'www' not in token:
                         vocab[token] = vocab.get(token, 0) + 1
+                        
         '''
-        with open(self.data_pat + "copynet_train.txt", "r") as f:
+        '''
+        vocab = dict()
+        with open(self.data_path + "copynet_train.txt", "r") as f:
             lines = f.readlines()
-            assert len(lines) == 2
             tokens = list(lines)[0].split() + list(lines)[1].split()
+            print(tokens)
             for token in tokens:
                 # do not add name tokens to vocab
                 if not contains_digit(token) and '@' not in token and 'http' not in token and 'www' not in token:
                     vocab[token] = vocab.get(token, 0) + 1
+        return vocab
+        '''
 
+        with open(self.data_path + "copynet_train.txt", "r", encoding='utf-8') as f:
+            for line in f:
+                nl = line.split('\t')[0]
+                sql = line.split('\t')[1]
+                tokens = nl.split() + sql.split()
+                for token in tokens:
+                    self.add_word(vocab, word2count, token)
+        print("Size of vocab before trimming: " + str(len(vocab)))
+        vocab = self.trim(vocab, word2count, 4)
+        print("Size of vocab after trimming: " + str(len(vocab)))
         return vocab
 
+    def add_word(self, vocab, word2count, word):
+        if word not in vocab:
+            vocab[word] = len(vocab)
+            word2count[word] = 1
+        else:
+            word2count[word] += 1
+
+    def trim(self, vocab, word2count, min_count):
+        keep_words = []
+        for k, v in word2count.items():
+            if v >= min_count:
+                keep_words.append(k)
+        del vocab
+        del word2count
+        vocab = dict()
+        word2count = dict()
+        for word in keep_words:
+            self.add_word(vocab, word2count, word)
+        return vocab
 
 class SequencePairDataset(Dataset):
     def __init__(self,
