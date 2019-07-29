@@ -30,7 +30,7 @@ def train(encoder_decoder: EncoderDecoder,
     global_step = 0
     loss_function = torch.nn.NLLLoss(ignore_index=0)
     optimizer = optim.Adam(encoder_decoder.parameters(), lr=lr)
-    model_path = './model/' + model_name + '/'
+    model_path = './saved/' + model_name + '/'
 
     for epoch, teacher_forcing in enumerate(teacher_forcing_schedule):
         print('epoch %i' % epoch, flush=True)
@@ -129,7 +129,7 @@ def train(encoder_decoder: EncoderDecoder,
 
 def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, val_size, lr, decoder_type, vocab_limit, hidden_size, embedding_size, max_length, seed=42):
 
-    model_path = './model/' + model_name + '/'
+    model_path = './saved/' + model_name + '/'
 
     # TODO: Change logging to reflect loaded parameters
 
