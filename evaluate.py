@@ -10,6 +10,8 @@ from model.encoder_decoder import EncoderDecoder
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
+from nltk.translate.bleu_score import sentence_bleu
+
 
 
 def evaluate(encoder_decoder: EncoderDecoder, data_loader):
@@ -119,6 +121,35 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
                                   data_type='test')
 
     data_loader = DataLoader(dataset, batch_size=batch_size)
+
+    get_bleu = True
+
+    if get_bleu:
+        test_file = open("data/copynet_test.txt", "r", encoding='utf-8')
+        out_file = open("results/" + model_name.split('/')[-1] + ".txt", 'w', encoding='utf-8')
+        total_score = 0.0
+        num = 0.0
+        for i, row in enumerate(tqdm(test_file)):
+            sql = row.split('\t')[1]
+            gold_nl = row.split('\t')[0]
+            predicted = encoder_decoder.get_response(sql)
+            predicted = predicted.replace('<SOS>', '')
+            predicted = predicted.replace('<EOS>', '')
+            out_file.write(predicted + "\n")
+
+            score = sentence_bleu([gold_nl.split()], predicted.split(), smoothing_function=SmoothingFunction().method2)
+            # score = sentence_bleu(ref, pred)
+            total_score += score
+            num += 1
+            if i == 1000:
+                del encoder_decoder
+                test_file.close()
+                out_file.close()
+                break
+        print("BLEU score on test set is " + str(total_score * 100 / num))
+        return
+
+
     if interact:
         encoder_decoder.interactive(unsmear)
 
@@ -203,6 +234,6 @@ if __name__ == '__main__':
              args.val_size,
              args.batch_size,
              args.interact,
-             args.unsmear)
+             True)
     except KeyboardInterrupt:
         pass
