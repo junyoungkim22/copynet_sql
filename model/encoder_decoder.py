@@ -5,6 +5,8 @@ from utils import seq_to_string, tokens_to_seq
 from spacy.lang.en import English
 from .encoder import EncoderRNN
 from torch.autograd import Variable
+from model.glove_loader import make_weights
+import torch
 
 
 class EncoderDecoder(nn.Module):
@@ -15,7 +17,7 @@ class EncoderDecoder(nn.Module):
 
         self.encoder = EncoderRNN(len(self.lang.tok_to_idx),
                                   hidden_size,
-                                  embedding_size)
+                                  embedding_size, lang)
         self.decoder_type = decoder_type
         decoder_hidden_size = 2 * self.encoder.hidden_size
         if self.decoder_type == 'attn':

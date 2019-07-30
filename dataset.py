@@ -81,7 +81,7 @@ class Language(object):
                 for token in tokens:
                     self.add_word(vocab, word2count, token)
         print("Size of vocab before trimming: " + str(len(vocab)))
-        vocab = self.trim(vocab, word2count, 4)
+        vocab = self.trim(vocab, word2count, 2)
         print("Size of vocab after trimming: " + str(len(vocab)))
         return vocab
 

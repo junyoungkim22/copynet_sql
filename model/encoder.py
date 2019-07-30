@@ -1,16 +1,18 @@
 import torch
 from torch import nn
 from torch.autograd import Variable
+from model.glove_loader import make_weights
 
 
 class EncoderRNN(nn.Module):
-    def __init__(self, input_size, hidden_size, embedding_size):
+    def __init__(self, input_size, hidden_size, embedding_size, lang):
         super(EncoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
 
         self.embedding = nn.Embedding(input_size, self.embedding_size)
-        self.embedding.weight.data.normal_(0, 1 / self.embedding_size**0.5)
+        #self.embedding.weight.data.normal_(0, 1 / self.embedding_size**0.5)
+        self.embedding.weight.data = torch.Tensor(make_weights(300, "glove/glove.840B.300d.txt", lang))
         self.gru = nn.GRU(embedding_size, hidden_size, bidirectional=True, batch_first=True)
 
     def forward(self, iput, hidden, lengths):

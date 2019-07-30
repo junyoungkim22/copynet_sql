@@ -93,10 +93,11 @@ def train(encoder_decoder: EncoderDecoder,
 
             global_step += 1
 
-            '''
-            if batch_idx == 30:
-                break
-            '''
+            debug = False
+
+            if(debug):
+                if batch_idx == 5:
+                    break
 
         val_loss, val_bleu_score = evaluate(encoder_decoder, val_data_loader)
 
@@ -143,13 +144,15 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
         encoder_decoder = torch.load(model_path + model_name + '.pt')
 
         print("creating training and validation datasets with saved languages", flush=True)
-        train_dataset = SequencePairDataset(lang=encoder_decoder.lang,
+        train_dataset = SequencePairDataset(maxlen=max_length,
+                                            lang=encoder_decoder.lang,
                                             use_cuda=use_cuda,
                                             val_size=val_size,
                                             use_extended_vocab=(encoder_decoder.decoder_type=='copy'),
                                             data_type='train')
 
-        val_dataset = SequencePairDataset(lang=encoder_decoder.lang,
+        val_dataset = SequencePairDataset(maxlen=max_length,
+                                          lang=encoder_decoder.lang,
                                           use_cuda=use_cuda,
                                           val_size=val_size,
                                           use_extended_vocab=(encoder_decoder.decoder_type=='copy'),
@@ -159,14 +162,16 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
         os.mkdir(model_path)
 
         print("creating training and validation datasets", flush=True)
-        train_dataset = SequencePairDataset(vocab_limit=vocab_limit,
+        train_dataset = SequencePairDataset(maxlen=max_length,
+                                            vocab_limit=vocab_limit,
                                             use_cuda=use_cuda,
                                             val_size=val_size,
                                             seed=seed,
                                             use_extended_vocab=(decoder_type=='copy'),
                                             data_type='train')
 
-        val_dataset = SequencePairDataset(lang=train_dataset.lang,
+        val_dataset = SequencePairDataset(maxlen=max_length,
+                                          lang=train_dataset.lang,
                                           use_cuda=use_cuda,
                                           val_size=val_size,
                                           seed=seed,
@@ -176,8 +181,8 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
         print("creating encoder-decoder model", flush=True)
         encoder_decoder = EncoderDecoder(train_dataset.lang,
                                          max_length,
-                                         embedding_size,
                                          hidden_size,
+                                         embedding_size,
                                          decoder_type)
 
         torch.save(encoder_decoder, model_path + '/%s.pt' % model_name)
@@ -186,9 +191,9 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
         encoder_decoder = encoder_decoder.cuda()
     else:
         encoder_decoder = encoder_decoder.cpu()
-
     train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_data_loader = DataLoader(val_dataset, batch_size=batch_size)
+
 
     train(encoder_decoder,
           train_data_loader,
@@ -243,10 +248,10 @@ if __name__ == '__main__':
                         help='The number of RNN units in the encoder. 2x this '
                              'number of RNN units will be used in the decoder')
 
-    parser.add_argument('--embedding_size', type=int, default=128,
+    parser.add_argument('--embedding_size', type=int, default=300,
                         help='Embedding size used in both encoder and decoder')
 
-    parser.add_argument('--max_length', type=int, default=200,
+    parser.add_argument('--max_length', type=int, default=50,
                         help='Sequences will be padded or truncated to this size.')
 
     args = parser.parse_args()

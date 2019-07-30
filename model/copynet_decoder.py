@@ -4,6 +4,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 from dataset import Language
 from utils import to_one_hot, DecoderBase
+from model.glove_loader import make_weights
 
 
 class CopyNetDecoder(DecoderBase):
@@ -14,7 +15,8 @@ class CopyNetDecoder(DecoderBase):
         self.lang = lang
         self.max_length = max_length
         self.embedding = nn.Embedding(len(self.lang.tok_to_idx), self.embedding_size, padding_idx=0)
-        self.embedding.weight.data.normal_(0, 1 / self.embedding_size**0.5)
+        #self.embedding.weight.data.normal_(0, 1 / self.embedding_size**0.5)
+        self.embedding.weight.data = torch.Tensor(make_weights(300, "glove/glove.840B.300d.txt", lang))
         self.embedding.weight.data[0, :] = 0.0
 
         self.attn_W = nn.Linear(self.hidden_size, self.hidden_size)

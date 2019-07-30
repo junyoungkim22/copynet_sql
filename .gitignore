@@ -6,3 +6,5 @@ copynet_env/
 model/first_model
 model/test
 results/
+glove/
+saved/
