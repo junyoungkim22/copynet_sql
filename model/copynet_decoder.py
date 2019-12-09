@@ -29,7 +29,8 @@ class CopyNetDecoder(DecoderBase):
         batch_size = encoder_outputs.data.shape[0]
         seq_length = encoder_outputs.data.shape[1]
 
-        hidden = Variable(torch.zeros(1, batch_size, self.hidden_size))
+        #hidden = Variable(torch.zeros(1, batch_size, self.hidden_size))
+        hidden = final_encoder_hidden
         if next(self.parameters()).is_cuda:
             hidden = hidden.cuda()
         else:

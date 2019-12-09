@@ -25,7 +25,8 @@ class AttentionDecoder(DecoderBase):
     def forward(self, encoder_outputs, inputs, final_encoder_hidden, targets=None, keep_prob=1.0, teacher_forcing=0.0):
         batch_size = encoder_outputs.data.shape[0]
 
-        hidden = Variable(torch.zeros(1, batch_size, self.hidden_size))  # overwrite the encoder hidden state with zeros
+        #hidden = Variable(torch.zeros(1, batch_size, self.hidden_size))  # overwrite the encoder hidden state with zeros
+        hidden = final_encoder_hidden
         if next(self.parameters()).is_cuda:
             hidden = hidden.cuda()
         else:

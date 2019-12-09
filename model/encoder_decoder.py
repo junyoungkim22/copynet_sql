@@ -38,9 +38,11 @@ class EncoderDecoder(nn.Module):
         batch_size = inputs.data.shape[0]
         hidden = self.encoder.init_hidden(batch_size)
         encoder_outputs, hidden = self.encoder(inputs, hidden, lengths)
+        next_hidden = torch.cat((hidden[0], hidden[1]), 1)
+        next_hidden = torch.unsqueeze(next_hidden, 0)
         decoder_outputs, sampled_idxs = self.decoder(encoder_outputs,
                                                      inputs,
-                                                     hidden,
+                                                     next_hidden,
                                                      targets=targets,
                                                      teacher_forcing=teacher_forcing)
         return decoder_outputs, sampled_idxs

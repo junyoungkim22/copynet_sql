@@ -19,7 +19,7 @@ class Language(object):
 
         vocab = self.create_vocab()
 
-        #truncated_vocab = sorted(self.vocab.items(), key=itemgetter(1), reverse=True)[:vocab_limit]
+        #truncated_vocab = sorted(vocab.items(), key=itemgetter(1), reverse=True)[:vocab_limit]
         truncated_vocab = sorted(vocab.items(), key=itemgetter(1), reverse=True)[:]
 
         del vocab
@@ -81,7 +81,7 @@ class Language(object):
                 for token in tokens:
                     self.add_word(vocab, word2count, token)
         print("Size of vocab before trimming: " + str(len(vocab)))
-        vocab = self.trim(vocab, word2count, 2)
+        vocab = self.trim(vocab, word2count, 3)
         print("Size of vocab after trimming: " + str(len(vocab)))
         return vocab
 

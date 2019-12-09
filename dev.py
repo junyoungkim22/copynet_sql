@@ -41,10 +41,12 @@ def evaluate(encoder_decoder: EncoderDecoder, data_loader):
 
     mean_loss = len(losses) / sum(losses)
 
+    """
     for i in range(20):
         print(all_target_seqs[i])
         print(all_output_seqs[i])
         print('*'*80)
+    """
 
     bleu_score = corpus_bleu(all_target_seqs, all_output_seqs, smoothing_function=SmoothingFunction().method2)
     print('BLEU SCORE: ' + str(bleu_score))
@@ -97,7 +99,7 @@ def print_output(input_seq, encoder_decoder: EncoderDecoder, input_tokens=None, 
     return idxs
 
 
-def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size, batch_size, interact, data_path, on_dev, unsmear):
+def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size, batch_size, interact, unsmear):
     #model_path = './model/' + model_name + '/'
     model_path = model_name
 
@@ -113,28 +115,21 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
         encoder_decoder = encoder_decoder.cpu()
 
 
-    data_type = 'dev'
-    if(on_dev == False):
-        data_type = 'test'
-    dataset = SequencePairDataset(data_path=data_path,
-                                  lang=encoder_decoder.lang,
+    dataset = SequencePairDataset(lang=encoder_decoder.lang,
                                   use_cuda=use_cuda,
                                   val_size=val_size,
-                                  data_type=data_type)
+                                  data_type='dev')
 
     data_loader = DataLoader(dataset, batch_size=batch_size)
-
-    #print(evaluate(encoder_decoder, data_loader))
 
     get_bleu = True
 
     if get_bleu:
-        #test_file = open("data/copynet_test.txt", "r", encoding='utf-8')
-        test_file = open(data_path + 'copynet_' + data_type + '.txt', 'r', encoding='utf-8')
+        dev_file = open("data/copynet_dev.txt", "r", encoding='utf-8')
         out_file = open("results/" + model_name.split('/')[-1] + ".txt", 'w', encoding='utf-8')
         total_score = 0.0
         num = 0.0
-        for i, row in enumerate(tqdm(test_file)):
+        for i, row in enumerate(tqdm(dev_file)):
             sql = row.split('\t')[1]
             gold_nl = row.split('\t')[0]
             predicted = encoder_decoder.get_response(sql)
@@ -152,13 +147,9 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
                 break
             '''
         del encoder_decoder
-        test_file.close()
+        dev_file.close()
         out_file.close()
-        if(on_dev):
-            print("DEV set")
-        else:
-            print("TEST set")
-        print("BLEU score is " + str(total_score * 100 / num))
+        print("BLEU score on test set is " + str(total_score * 100 / num))
         return
 
 
@@ -207,8 +198,6 @@ if __name__ == '__main__':
                             help='The name of a subdirectory of ./model/ that '
                              'contains encoder and decoder model files.')
 
-    arg_parser.add_argument('--data_path', type=str)
-    arg_parser.add_argument('--on_dev', default=True)
     arg_parser.add_argument('--n_print', type=int,
                             help='Instead of evaluating the model on the entire dataset,'
                              'n random examples from the dataset will be transformed.'
@@ -231,7 +220,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('--val_size', type=float, default=0.1,
                             help='The fractional size of the validation split.')
 
-    arg_parser.add_argument('--batch_size', type=int, default=32,
+    arg_parser.add_argument('--batch_size', type=int, default=100,
                             help='The batch size to use when evaluating on the full dataset.')
 
     arg_parser.add_argument('--unsmear', action='store_true',
@@ -248,8 +237,6 @@ if __name__ == '__main__':
              args.val_size,
              args.batch_size,
              args.interact,
-             args.data_path,
-             args.on_dev,
              True)
     except KeyboardInterrupt:
         pass
