@@ -41,12 +41,15 @@ def evaluate(encoder_decoder: EncoderDecoder, data_loader):
 
     mean_loss = len(losses) / sum(losses)
 
+    '''
     for i in range(20):
         print(all_target_seqs[i])
         print(all_output_seqs[i])
         print('*'*80)
+    '''
 
-    bleu_score = corpus_bleu(all_target_seqs, all_output_seqs, smoothing_function=SmoothingFunction().method2)
+    #bleu_score = corpus_bleu(all_target_seqs, all_output_seqs, smoothing_function=SmoothingFunction().method2)
+    bleu_score = corpus_bleu(all_target_seqs, all_output_seqs)
     print('BLEU SCORE: ' + str(bleu_score))
     return mean_loss, bleu_score
 
@@ -96,6 +99,47 @@ def print_output(input_seq, encoder_decoder: EncoderDecoder, input_tokens=None, 
 
     return idxs
 
+def get_bleu(encoder_decoder: EncoderDecoder, data_path, model_name, data_type):
+    # test_file = open("data/copynet_test.txt", "r", encoding='utf-8')
+    test_file = open(data_path + 'copynet_' + data_type + '.txt', 'r', encoding='utf-8')
+    if(data_type != 'dev'):
+        out_file = open("results/" + model_name.split('/')[-1] + ".txt", 'w', encoding='utf-8')
+    total_score = 0.0
+    num = 0.0
+    for i, row in enumerate(tqdm(test_file)):
+        sql = row.split('\t')[1]
+        gold_nl = row.split('\t')[0]
+        predicted = encoder_decoder.get_response(sql)
+        predicted = predicted.replace('<SOS>', '')
+        predicted = predicted.replace('<EOS>', '')
+        predicted = predicted.rstrip()
+        if(data_type != 'dev'):
+            out_file.write(predicted + "\n")
+
+        # score = sentence_bleu([gold_nl.split()], predicted.split(), smoothing_function=SmoothingFunction().method2)
+        score = sentence_bleu([gold_nl.split()], predicted.split())
+        # score = sentence_bleu(ref, pred)
+        total_score += score
+        num += 1
+
+        '''
+        if i == 10:
+            break
+        '''
+
+    # del encoder_decoder
+    test_file.close()
+    if(data_type != 'dev'):
+        out_file.close()
+    final_score = total_score * 100 / num
+    if (data_type == 'dev'):
+        print("DEV set")
+    else:
+        print("TEST set")
+    print("BLEU score is " + str(final_score))
+    return final_score
+
+
 
 def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size, batch_size, interact, data_path, on_dev, unsmear):
     #model_path = './model/' + model_name + '/'
@@ -126,6 +170,11 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
 
     #print(evaluate(encoder_decoder, data_loader))
 
+    get_bleu(encoder_decoder, data_path, model_name, data_type)
+    return
+
+    '''
+
     get_bleu = True
 
     if get_bleu:
@@ -143,15 +192,18 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
             predicted = predicted.rstrip()
             out_file.write(predicted + "\n")
 
-            score = sentence_bleu([gold_nl.split()], predicted.split(), smoothing_function=SmoothingFunction().method2)
+            #score = sentence_bleu([gold_nl.split()], predicted.split(), smoothing_function=SmoothingFunction().method2)
+            score = sentence_bleu([gold_nl.split()], predicted.split())
             # score = sentence_bleu(ref, pred)
             total_score += score
             num += 1
-            '''
+    '''
+    '''
             if i == 1000:
                 break
-            '''
-        del encoder_decoder
+    '''
+    '''
+        #del encoder_decoder
         test_file.close()
         out_file.close()
         if(on_dev):
@@ -160,6 +212,7 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
             print("TEST set")
         print("BLEU score is " + str(total_score * 100 / num))
         return
+    '''
 
 
     if interact:
@@ -208,7 +261,7 @@ if __name__ == '__main__':
                              'contains encoder and decoder model files.')
 
     arg_parser.add_argument('--data_path', type=str)
-    arg_parser.add_argument('--on_dev', default=True)
+    arg_parser.add_argument('--on_dev', default=False)
     arg_parser.add_argument('--n_print', type=int,
                             help='Instead of evaluating the model on the entire dataset,'
                              'n random examples from the dataset will be transformed.'

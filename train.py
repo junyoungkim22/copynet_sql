@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 
 from dataset import SequencePairDataset
 from model.encoder_decoder import EncoderDecoder
-from evaluate import evaluate
+from evaluate import evaluate, get_bleu
 from utils import to_np, trim_seqs
 
 from tensorboardX import SummaryWriter
@@ -28,7 +28,8 @@ def train(encoder_decoder: EncoderDecoder,
           teacher_forcing_schedule,
           lr,
           max_length,
-          use_decay):
+          use_decay,
+          data_path):
 
     global_step = 0
     loss_function = torch.nn.NLLLoss(ignore_index=0)
@@ -42,6 +43,8 @@ def train(encoder_decoder: EncoderDecoder,
     scheduler = StepLR(optimizer, step_size=1, gamma=gamma)
 
     #val_loss, val_bleu_score = evaluate(encoder_decoder, val_data_loader)
+
+    best_bleu = 0.0
 
     for epoch, teacher_forcing in enumerate(teacher_forcing_schedule):
         #scheduler.step()
@@ -81,7 +84,8 @@ def train(encoder_decoder: EncoderDecoder,
 
             batch_targets = [[list(seq[seq > 0])] for seq in list(to_np(target_variable))]
 
-            batch_bleu_score = corpus_bleu(batch_targets, batch_outputs, smoothing_function=SmoothingFunction().method2)
+            #batch_bleu_score = corpus_bleu(batch_targets, batch_outputs, smoothing_function=SmoothingFunction().method2)
+            batch_bleu_score = corpus_bleu(batch_targets, batch_outputs)
 
             '''
             if global_step < 10 or (global_step % 10 == 0 and global_step < 100) or (global_step % 100 == 0 and epoch < 2):
@@ -135,8 +139,12 @@ def train(encoder_decoder: EncoderDecoder,
         writer.add_text('cancel', output_string, global_step=global_step)
         '''
 
-        print('val loss: %.5f, val BLEU score: %.5f' % (val_loss, val_bleu_score), flush=True)
-        torch.save(encoder_decoder, "%s%s_%i_%.3f.pt" % (model_path, model_name, epoch, val_bleu_score))
+        calc_bleu_score = get_bleu(encoder_decoder, data_path, None, 'dev')
+        print('val loss: %.5f, val BLEU score: %.5f' % (val_loss, calc_bleu_score), flush=True)
+        if(calc_bleu_score > best_bleu):
+            print("Best BLEU score! Saving model...")
+            best_bleu = calc_bleu_score
+            torch.save(encoder_decoder, "%s%s_%i_%.3f.pt" % (model_path, model_name, epoch, calc_bleu_score))
 
         print('-' * 100, flush=True)
 
@@ -223,7 +231,8 @@ def main(model_name, use_cuda, batch_size, teacher_forcing_schedule, keep_prob, 
           teacher_forcing_schedule,
           lr,
           encoder_decoder.decoder.max_length,
-          use_decay)
+          use_decay,
+          data_path)
 
 
 if __name__ == '__main__':

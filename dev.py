@@ -115,7 +115,8 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
         encoder_decoder = encoder_decoder.cpu()
 
 
-    dataset = SequencePairDataset(lang=encoder_decoder.lang,
+    dataset = SequencePairDataset(data_path='data/parsed/',
+                                  lang=encoder_decoder.lang,
                                   use_cuda=use_cuda,
                                   val_size=val_size,
                                   data_type='dev')
@@ -125,7 +126,7 @@ def main(model_name, use_cuda, n_print, idxs_print, use_train_dataset, val_size,
     get_bleu = True
 
     if get_bleu:
-        dev_file = open("data/copynet_dev.txt", "r", encoding='utf-8')
+        dev_file = open("data/parsed/copynet_dev.txt", "r", encoding='utf-8')
         out_file = open("results/" + model_name.split('/')[-1] + ".txt", 'w', encoding='utf-8')
         total_score = 0.0
         num = 0.0
